@@ -32,3 +32,17 @@ with torch.no_grad():
     print(scores_two_tanh[22605])
     print(outputs["logits"][0][8][22605])
     '''
+    hidden = outputs["hidden_states"] #hidden is a tuple, len 27
+    for i in range(26):
+        is_pos = hidden[i][0][8] #shape (2304)
+        normed = model.model.norm(is_pos) #shape (2304)
+        scores = model.lm_head(normed) #shape (256000)
+        scores_tanh = 30 * torch.tanh(scores / 30) #shape (256000)
+        winner_id = torch.argmax(scores_tanh).item()
+        winner = tokenizer.convert_ids_to_tokens(winner_id)
+        print(i, winner)
+    h26 = model.lm_head(hidden[26][0][8]) #shape (256000)
+    h26_tanh = 30 * torch.tanh(h26 / 30) #shape (256000)
+    h26_winner_id = torch.argmax(h26_tanh).item()
+    h26_winner = tokenizer.convert_ids_to_tokens(h26_winner_id)
+    print(f"26 {h26_winner}")
