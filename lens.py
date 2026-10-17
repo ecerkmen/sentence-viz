@@ -40,9 +40,21 @@ with torch.no_grad():
         scores_tanh = 30 * torch.tanh(scores / 30) #shape (256000)
         winner_id = torch.argmax(scores_tanh).item()
         winner = tokenizer.convert_ids_to_tokens(winner_id)
-        print(i, winner)
+        #Calculating _Austin's rank
+        austin_rank = ((scores > scores[22605]).sum()) + 1
+        print(f"{i}, {winner}, _Austin rank: {austin_rank}")
+
     h26 = model.lm_head(hidden[26][0][8]) #shape (256000)
     h26_tanh = 30 * torch.tanh(h26 / 30) #shape (256000)
     h26_winner_id = torch.argmax(h26_tanh).item()
     h26_winner = tokenizer.convert_ids_to_tokens(h26_winner_id)
-    print(f"26 {h26_winner}")
+    #Calculating Austin's rank at layer 26
+    austin_rank_h26 = ((h26 > h26[22605]).sum()) + 1
+    print(f"26 {h26_winner}, _Austin rank: {austin_rank_h26}")
+
+    #compare embed_tokens' table to lm_head's
+    '''
+    print(torch.equal(model.lm_head.weight, model.model.embed_tokens.weight))
+    dallas_mul = model.model.embed_tokens.weight[26865] * 48
+    print(torch.equal(hidden[0][0][7], dallas_mul))
+    '''
