@@ -14,6 +14,7 @@ dallas_pos = tokens.index("▁Dallas")
 with torch.no_grad():
     outputs = model(input_ids=inputs["input_ids"], output_hidden_states=True)
     austin_id = tokenizer.convert_tokens_to_ids("▁Austin")
+    texas_id = tokenizer.convert_tokens_to_ids("▁Texas")
 
     # hidden_states[26] is already after the final norm:
     # lm_head + cap on it gives exactly outputs["logits"] (checked 15 Oct)
@@ -34,23 +35,39 @@ with torch.no_grad():
     '''
     hidden = outputs["hidden_states"] #hidden is a tuple, len 27
     for i in range(26):
-        is_list = hidden[i][0][8] #shape (2304)
-        normed = model.model.norm(is_list) #shape (2304)
-        scores = model.lm_head(normed) #shape (256000)
-        scores_tanh = 30 * torch.tanh(scores / 30) #shape (256000)
-        winner_id = torch.argmax(scores_tanh).item()
-        winner = tokenizer.convert_ids_to_tokens(winner_id)
-        #Calculating _Austin's rank
-        austin_rank = ((scores > scores[austin_id]).sum()) + 1
-        print(f"{i}, {winner}, _Austin rank: {austin_rank}")
+        is_list = hidden[i][0][8] #shape (2304) for _is' list
+        dallas_list = hidden[i][0][dallas_pos] #shape(2304) for _Dallas' list
+        is_normed = model.model.norm(is_list) #shape (2304) for _is' list
+        dallas_normed = model.model.norm(dallas_list) #shape (2304) for _Dallas' list
+        is_scores = model.lm_head(is_normed) #shape (256000) for _is
+        dallas_scores = model.lm_head(dallas_normed) #shape (256000) for _Dallas
+        is_scores_tanh = 30 * torch.tanh(is_scores / 30) #shape (256000) for _is
+        dallas_scores_tanh = 30 * torch.tanh(dallas_scores / 30) #shape (256000) for _Dallas
+        is_winner_id = torch.argmax(is_scores_tanh).item()
+        dallas_winner_id = torch.argmax(dallas_scores_tanh).item()
+        is_winner = tokenizer.convert_ids_to_tokens(is_winner_id)
+        dallas_winner = tokenizer.convert_ids_to_tokens(dallas_winner_id)
+        #Calculating _Austin's rank at position 8
+        austin_rank = ((is_scores > is_scores[austin_id]).sum()) + 1
+        #Calculating _Texas' rank at position 7
+        texas_rank = ((dallas_scores > dallas_scores[texas_id]).sum()) + 1
+        print(f"Position 8: {i}, {is_winner}, _Austin rank: {austin_rank}")
+        print(f"Position 7: {i}, {dallas_winner}, _Texas rank: {texas_rank}")
 
-    scores26 = model.lm_head(hidden[26][0][8]) #shape (256000)
-    scores26_tanh = 30 * torch.tanh(scores26 / 30) #shape (256000)
-    scores26_winner_id = torch.argmax(scores26_tanh).item()
-    scores26_winner = tokenizer.convert_ids_to_tokens(scores26_winner_id)
-    #Calculating Austin's rank at snapshot 26
-    austin_rank_h26 = ((scores26 > scores26[austin_id]).sum()) + 1
-    print(f"26 {scores26_winner}, _Austin rank: {austin_rank_h26}")
+    is_scores26 = model.lm_head(hidden[26][0][8]) #shape (256000) for _is
+    dallas_scores26 = model.lm_head(hidden[26][0][dallas_pos]) #shape (256000) for _Dallas
+    is_scores26_tanh = 30 * torch.tanh(is_scores26 / 30) #shape (256000) for _is
+    dallas_scores26_tanh = 30 * torch.tanh(dallas_scores26 / 30) #shape (256000) for _Dallas
+    is_scores26_winner_id = torch.argmax(is_scores26_tanh).item()
+    dallas_scores26_winner_id = torch.argmax(dallas_scores26_tanh).item()
+    is_scores26_winner = tokenizer.convert_ids_to_tokens(is_scores26_winner_id)
+    dallas_scores26_winner = tokenizer.convert_ids_to_tokens(dallas_scores26_winner_id)
+    #Calculating Austin's rank at snapshot 26, position 8
+    austin_rank_h26 = ((is_scores26 > is_scores26[austin_id]).sum()) + 1
+    #Calculating Texas' rank at snapshot 26, position 7
+    texas_rank_h26 = ((dallas_scores26 > dallas_scores26[texas_id]).sum()) + 1
+    print(f"Position 8: 26 {is_scores26_winner}, _Austin rank: {austin_rank_h26}")
+    print(f"Position 7: 26 {dallas_scores26_winner}, _Texas rank: {texas_rank_h26}")
 
     #Compare embed_tokens' table to lm_head's:
     #The tables inside embed_tokens and lm_head are the same. By the time the copied rows reach snapshot 0, they're multiplied by 48
