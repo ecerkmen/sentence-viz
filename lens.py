@@ -77,3 +77,16 @@ with torch.no_grad():
     dallas_mul = model.model.embed_tokens.weight[26865] * 48
     print(torch.equal(hidden[0][0][7], dallas_mul)) #True
     '''
+    #Checking top 5 IDs through snapshots 0-25, position 7
+    for i in range(26):
+        dallas_listh025 = outputs["hidden_states"][i][0][dallas_pos] #shape (2304)
+        dallas_listh025_normed = model.model.norm(dallas_listh025) #shape (2304)
+        dallas_listh025_scores = model.lm_head(dallas_listh025_normed)
+        dallash025_topk = torch.topk(dallas_listh025_scores, 5)
+        dallas_top5_tokens = tokenizer.convert_ids_to_tokens(dallash025_topk.indices.tolist())
+        print(f"Snapshot {i}, Tokens: {dallas_top5_tokens}, Scores: {dallash025_topk.values}")
+
+    #Checking top 5 IDs at snapshot 26, position 7
+    dallas_scores26_topk = torch.topk(dallas_scores26, 5)
+    dallas26_top5_tokens = tokenizer.convert_ids_to_tokens(dallas_scores26_topk.indices.tolist())
+    print(f"Snapshot 26, Tokens: {dallas26_top5_tokens}, Scores: {dallas_scores26_topk.values}")
