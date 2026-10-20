@@ -51,8 +51,11 @@ with torch.no_grad():
         austin_rank = ((is_scores > is_scores[austin_id]).sum()) + 1
         #Calculating _Texas' rank at position 7
         texas_rank = ((dallas_scores > dallas_scores[texas_id]).sum()) + 1
-        print(f"Position 8: {i}, {is_winner}, _Austin rank: {austin_rank}")
-        print(f"Position 7: {i}, {dallas_winner}, _Texas rank: {texas_rank}")
+        #print(f"Position 8: {i}, {is_winner}, _Austin rank: {austin_rank}")
+        #print(f"Position 7: {i}, {dallas_winner}, _Texas rank: {texas_rank}")
+        #Calculating winning token's score - _Austin's score through snapshots 0-25, at position 8
+        austin_diff = torch.max(is_scores) - is_scores[austin_id]
+        print(f"Position 8: {i}, {austin_diff}")
 
     is_scores26 = model.lm_head(hidden[26][0][8]) #shape (256000) for _is
     dallas_scores26 = model.lm_head(hidden[26][0][dallas_pos]) #shape (256000) for _Dallas
@@ -66,8 +69,11 @@ with torch.no_grad():
     austin_rank_h26 = ((is_scores26 > is_scores26[austin_id]).sum()) + 1
     #Calculating Texas' rank at snapshot 26, position 7
     texas_rank_h26 = ((dallas_scores26 > dallas_scores26[texas_id]).sum()) + 1
-    print(f"Position 8: 26 {is_scores26_winner}, _Austin rank: {austin_rank_h26}")
-    print(f"Position 7: 26 {dallas_scores26_winner}, _Texas rank: {texas_rank_h26}")
+    #print(f"Position 8: 26 {is_scores26_winner}, _Austin rank: {austin_rank_h26}")
+    #print(f"Position 7: 26 {dallas_scores26_winner}, _Texas rank: {texas_rank_h26}")
+    #Calculating winning token's score - _Austin's score at snapshot 26, position 8
+    austin26_diff = torch.max(is_scores26) - is_scores26[austin_id]
+    print(f"Position 8: 26, {austin26_diff}")
 
     #Compare embed_tokens' table to lm_head's:
     #The tables inside embed_tokens and lm_head are the same. By the time the copied rows reach snapshot 0, they're multiplied by 48
@@ -84,9 +90,9 @@ with torch.no_grad():
         dallas_listh025_scores = model.lm_head(dallas_listh025_normed)
         dallash025_topk = torch.topk(dallas_listh025_scores, 5)
         dallas_top5_tokens = tokenizer.convert_ids_to_tokens(dallash025_topk.indices.tolist())
-        print(f"Snapshot {i}, Tokens: {dallas_top5_tokens}, Scores: {dallash025_topk.values}")
+        #print(f"Snapshot {i}, Tokens: {dallas_top5_tokens}, Scores: {dallash025_topk.values}")
 
     #Checking top 5 IDs at snapshot 26, position 7
     dallas_scores26_topk = torch.topk(dallas_scores26, 5)
     dallas26_top5_tokens = tokenizer.convert_ids_to_tokens(dallas_scores26_topk.indices.tolist())
-    print(f"Snapshot 26, Tokens: {dallas26_top5_tokens}, Scores: {dallas_scores26_topk.values}")
+    #print(f"Snapshot 26, Tokens: {dallas26_top5_tokens}, Scores: {dallas_scores26_topk.values}")
