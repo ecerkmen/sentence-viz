@@ -55,7 +55,7 @@ with torch.no_grad():
         #print(f"Position 7: {i}, {dallas_winner}, _Texas rank: {texas_rank}")
         #Calculating winning token's score - _Austin's score through snapshots 0-25, at position 8
         austin_diff = torch.max(is_scores) - is_scores[austin_id]
-        print(f"Position 8: {i}, {austin_diff}")
+        #print(f"Position 8: {i}, {austin_diff}")
 
     is_scores26 = model.lm_head(hidden[26][0][8]) #shape (256000) for _is
     dallas_scores26 = model.lm_head(hidden[26][0][dallas_pos]) #shape (256000) for _Dallas
@@ -73,7 +73,7 @@ with torch.no_grad():
     #print(f"Position 7: 26 {dallas_scores26_winner}, _Texas rank: {texas_rank_h26}")
     #Calculating winning token's score - _Austin's score at snapshot 26, position 8
     austin26_diff = torch.max(is_scores26) - is_scores26[austin_id]
-    print(f"Position 8: 26, {austin26_diff}")
+    #print(f"Position 8: 26, {austin26_diff}")
 
     #Compare embed_tokens' table to lm_head's:
     #The tables inside embed_tokens and lm_head are the same. By the time the copied rows reach snapshot 0, they're multiplied by 48
@@ -83,7 +83,7 @@ with torch.no_grad():
     dallas_mul = model.model.embed_tokens.weight[26865] * 48
     print(torch.equal(hidden[0][0][7], dallas_mul)) #True
     '''
-    #Checking top 5 IDs through snapshots 0-25, position 7
+    #Checking top 5 IDs through snapshots 0-25, at position 7
     for i in range(26):
         dallas_listh025 = outputs["hidden_states"][i][0][dallas_pos] #shape (2304)
         dallas_listh025_normed = model.model.norm(dallas_listh025) #shape (2304)
@@ -96,3 +96,17 @@ with torch.no_grad():
     dallas_scores26_topk = torch.topk(dallas_scores26, 5)
     dallas26_top5_tokens = tokenizer.convert_ids_to_tokens(dallas_scores26_topk.indices.tolist())
     #print(f"Snapshot 26, Tokens: {dallas26_top5_tokens}, Scores: {dallas_scores26_topk.values}")
+
+    #Checking top 5 IDs through snapshots 0-25, at position 8
+    for i in range(26):
+        is_listh026 = outputs["hidden_states"][i][0][8] #shape (2304)
+        is_listh026_normed = model.model.norm(is_listh026) #shape (2304)
+        is_listh026_scores = model.lm_head(is_listh026_normed)
+        ish026_topk = torch.topk(is_listh026_scores, 5)
+        is_top5_tokens = tokenizer.convert_ids_to_tokens(ish026_topk.indices.tolist())
+        print(f"Snapshot {i}, {is_top5_tokens}")
+
+    #Checking top 5 IDs at snapshot 26, position 8
+    is_scores26_topk = torch.topk(is_scores26, 5)
+    is26_top5_tokens = tokenizer.convert_ids_to_tokens(is_scores26_topk.indices.tolist())
+    print(f"Snapshot 26, {is26_top5_tokens}")
